@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Getech.EAP.HttpMessageServiceContract\Getech.EAP.HttpMessageServiceContract.csproj" />
+    <ProjectReference Include="..\Getech.EAP.TCP.Contract\Getech.EAP.TCP.Contract.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Workbench.Contract">
+      <HintPath>..\..\Library\Workbench.Contract.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy bin\Debug\net461\Getech.EAP.TCP.dll ..\Getech.EAP.Server\bin\Debug\net461\PluginsDLL\Getech.EAP.TCP.dll /y" />
+  </Target>
+
+</Project>
