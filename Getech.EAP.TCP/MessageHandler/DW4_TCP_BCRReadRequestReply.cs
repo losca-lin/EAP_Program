@@ -20,11 +20,10 @@ namespace Getech.EAP.TCP.MessageHandler
                 Dictionary<string, object> innerMap = new Dictionary<string, object>();
                 JObject jobject = ConvertUtils.DeserializeObject<JObject>(data.Data.ToString());
                 var contextname = context.Name;
-                var ReadID = jobject.GetVal("ID").Trim();
                 
+                var ReadID = jobject.GetVal("ID").Trim();
                 //var dcr= ObjectManager.DCRManager.FindDCRByDCR(contextname);
                 //var machine = ObjectManager.MachineManager.ViewMachine(dcr.LineId, dcr.MachineId);
-
                 messageService.BCRReadRequestReply1(contextname,"",ReadID);
                // opcMessageService.BCRReadRequestReply(contextname, ReadID);
 

@@ -24,7 +24,7 @@ namespace Getech.EAP.HttpMessageService
             colIdDic.TryAdd(key, innerMap);
         }
 
-        public Dictionary<string, object> getColIdDic(string key)
+        public Dictionary<string, object> getColIdDicDel(string key)
         {
             Dictionary<string, object> innerMap = null;
             if (colIdDic.ContainsKey(key))
@@ -35,6 +35,18 @@ namespace Getech.EAP.HttpMessageService
             }
             return innerMap;
         }
+
+        public Dictionary<string, object> getColIdDic(string key)
+        {
+            Dictionary<string, object> innerMap = null;
+            if (colIdDic.ContainsKey(key))
+            {
+                innerMap = colIdDic[key];
+
+            }
+            return innerMap;
+        }
+
 
     }
 }
