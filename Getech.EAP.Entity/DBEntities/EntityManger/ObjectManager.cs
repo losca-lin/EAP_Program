@@ -16,6 +16,8 @@ namespace Getech.EAP.Entity.DBEntities.EntityManger
         public static UnitManager UnitManager { get; set; }
         public static UserManager UserManager { get; set; }
 
+        public static XdTableManager XdTableManager { get; set; }
+
         public static EDCDataManager EDCDataManager { get; set; }
         public static FDCDataManager FDCDataManager { get; set; }
 

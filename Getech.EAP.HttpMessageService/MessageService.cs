@@ -11,10 +11,15 @@ using Getech.EAP.Entity.EAPEntities.DataTransferObject.MES_MessageEntities;
 using RestSharp;
 using Getech.EAP.Entity.EAPEntities.DataTransferObject.MES_Reply;
 using TRANSPORTJOB = Getech.EAP.Entity.EAPEntities.DataTransferObject.MES_MessageEntities.TRANSPORTJOB;
+using Getech.EAP.Entity.DBEntities.DBEntity;
+using System.Collections;
+using Workbench.Contract.RV;
+using System.Xml.Linq;
+using System.Linq;
 
 namespace Getech.EAP.HttpMessageService
 {
-    public class MessageService: AbstractService, IMessageServiceContract
+    public class MessageService : AbstractService, IMessageServiceContract
     {
         public void FLS_AGVActionReport(string eqpName, string timeKey, Request message)
         {
@@ -27,7 +32,7 @@ namespace Getech.EAP.HttpMessageService
                     return;
                 }
                 var serverId = message.Body.GetVal("serverId");
-               
+
                 var taskId = message.Body.GetVal("taskId");
                 //var commandResult = message.Body.GetVal("commandResult");
                 //var AbnormalReason = message.Body.GetVal("AbnormalReason");
@@ -39,7 +44,7 @@ namespace Getech.EAP.HttpMessageService
                 var agvId = message.Body.GetVal("agvId");//agv 小车id
                 var msgName = message.Body.GetVal("msgName");
                 var transactionId = message.Body.GetVal("transactionId");
-                log.LogInfoWrite("TCP_Driver", GetType().Name, MethodBase.GetCurrentMethod().Name, string.Format("MessageName :{0},TimeKey :{1},TaskID:{2},agvAction:{3},agvPosition:{4}，agvId:{5}，agvTaskId:{6}", msgName, timeKey, taskId, agvAction, agvPosition,agvId, agvTaskId));
+                log.LogInfoWrite("TCP_Driver", GetType().Name, MethodBase.GetCurrentMethod().Name, string.Format("MessageName :{0},TimeKey :{1},TaskID:{2},agvAction:{3},agvPosition:{4}，agvId:{5}，agvTaskId:{6}", msgName, timeKey, taskId, agvAction, agvPosition, agvId, agvTaskId));
 
 
                 var eapreply = new JObject();
@@ -60,15 +65,51 @@ namespace Getech.EAP.HttpMessageService
         {
             try
             {
-                var portId = message.Body.GetVal("port").ToString().Trim();
-                string name = "DCR0" + portId;
+                string portId = message.Body.GetVal("port").ToString().Trim();
+                
+                string name1;
+                string name2 ;
+                switch (portId)
+                {
+                    case "1":
+                        name1 = "DCR01";
+                        name2 = "DCR01_1";
+                        handlerTCP_BCRReadRequest(name1, name2, timeKey, portId);
 
-                Dictionary<string, object> innerMap = new Dictionary<string, object>();
-                innerMap.Add("port", portId);
-                innerMap.Add("timeKey", timeKey);
-                putColIdDic(name, innerMap);
+                        break;
+                    case "2":
+                        name1 = "DCR02";
+                        name2 = "DCR02_1";
+                        handlerTCP_BCRReadRequest(name1, name2, timeKey, portId);
 
-                tcpCommandService.TCP_BCRReadRequest(name, timeKey,"SA");
+                        break;
+                    case "3":
+
+                         name1 = "DCR03";
+                         name2 = "DCR03_1";
+                        handlerTCP_BCRReadRequest(name1,name2,timeKey,portId);
+
+
+                        break;
+                    case "4":
+                        name1 = "DCR04";
+                        name2 = "DCR04_1";
+                        handlerTCP_BCRReadRequest(name1, name2, timeKey, portId);
+
+                        break;
+                    case "5":
+                        name1 = "DCR05";
+                        name2 = "DCR05_1";
+                        handlerTCP_BCRReadRequest(name1, name2, timeKey, portId);
+
+                        break;
+
+                }
+                
+
+
+
+                //tcpCommandService.TCP_BCRReadRequest(name, timeKey,"SA");
 
 
             }
@@ -77,15 +118,203 @@ namespace Getech.EAP.HttpMessageService
                 log.LogErrorWrite("TCP_Driver", GetType().Name, MethodBase.GetCurrentMethod().Name + "()", ex.ToString());
             }
         }
+        Dictionary<string, string> innerMap1 = new Dictionary<string, string>();
+        Dictionary<string, string> innerMap2 = new Dictionary<string, string>();
+        public void BCRReadRequestReply1(string eqpName, string timeKey, string readID)
+        {
+
+            try
+            {
+                int i = 0;
+                if (eqpName.Contains(ConstUtil.PORT))
+                {
+                    i++;
+                    innerMap1.Add(eqpName, readID);
 
 
+                }
+                Console.WriteLine(i + "次" + innerMap1.Count);
+                if (innerMap1.Count == 2)
+                {
+
+                    foreach (string key in innerMap1.Keys)
+                    {
+                        string value = innerMap1[key].Trim().ToString();
+                        if (value == ConstUtil.READID_NO_READ || string.IsNullOrEmpty(value))
+                        {
+                            Console.WriteLine(key + "-----0000--------" + value);
+                            //innerMap1.Remove(key);
+
+
+
+                        }
+                        else
+                        {
+                            Console.WriteLine(key + "-----0011--------" + value);
+                            innerMap2.Add(key, value);
+
+                        }
+
+                    }
+
+                    if (innerMap2.Count == 2)
+                    {
+                        foreach (string key in innerMap2.Keys)
+                        {
+                            if (!key.Contains("_"))
+                            {
+                                BCRReadRequestReply(key, "", innerMap2[key]);
+                                Console.WriteLine(key + "-----1111--------" + innerMap2[key]);
+
+                            }
+
+                        }
+
+
+                    }
+                    else if (innerMap2.Count == 1)
+                    {
+                        var enumerator = innerMap2.GetEnumerator();
+                        while (enumerator.MoveNext())
+                        {
+                            Console.WriteLine("key is " + enumerator.Current.Key);
+                            Console.WriteLine("value is " + enumerator.Current.Value);
+                            if (!enumerator.Current.Key.Contains("_"))
+                            {
+                                Console.WriteLine(enumerator.Current.Key + "----222-----" + innerMap1[enumerator.Current.Key]);
+                                BCRReadRequestReply(enumerator.Current.Key, "", innerMap2[enumerator.Current.Key]);
+
+                            }
+                            else
+                            {
+                                Console.WriteLine(enumerator.Current.Key + "-------333------" + innerMap1[enumerator.Current.Key]);
+                                BCRReadRequestReply3(enumerator.Current.Key, "", innerMap2[enumerator.Current.Key]);
+
+                            }
+
+                        }
+
+
+                    }
+                    else
+                    {
+                        Console.WriteLine(eqpName + "44444444444444444444");
+                        BCRReadRequestReply(eqpName, "", ConstUtil.READID_NO_READ);
+
+                        Console.WriteLine("444");
+                    }
+                    innerMap1.Clear();
+                    innerMap2.Clear();
+
+
+                }
+
+
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+
+            }
+
+        }
         public void BCRReadRequestReply(string eqpName, string timeKey, string readID)
         {
             try
             {
                 //var machine = ObjectManager.MachineManager.ViewMachine(eqpName);
-               // if (machine == null)
-               // {
+                // if (machine == null)
+                // {
+                //    log.LogErrorWrite("TCP_Driver", GetType().Name, MethodBase.GetCurrentMethod().Name, string.Format("Find Machine Error[{0}]:MachineID={1}", timeKey, machine.MachineId));
+                //     return;
+                // }
+                Dictionary<string, object> innerMap = null;
+                string port = "";
+                // timeKey = innerMap["timeKey"].ToString();
+                var eapreply = new JObject();
+          
+                innerMap = getColIdDic(eqpName);
+                port = innerMap["port"].ToString();
+                timeKey = innerMap["timeKey"].ToString();
+
+       
+
+                // 取数据库数据，readid为单晶ID，处理数据逻辑后返回到中为机械手
+                //....
+                //....
+                string code = "ok";
+                string message = "success";
+                int status = 1;
+                ObjectManager om = new ObjectManager();
+                Type t = om.GetType();
+                var propterties = t.GetProperties(BindingFlags.Static | BindingFlags.Public);
+                foreach (PropertyInfo pi in propterties)
+                {
+                    var o = Activator.CreateInstance(pi.PropertyType);
+                    pi.SetValue(om, o);
+                }
+
+
+                //readID = "CDGC2232204Z4801T61Y04W";
+                if (readID == ConstUtil.READID_NO_READ)
+                {
+                    code = "NG";
+                    message = "单晶id未读取";
+                }
+                else
+                {
+
+                    XdTable xdTable = ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(readID);
+                    //todo xdtable判空
+                    if (xdTable == null)
+                    {
+                        code = "NG";
+                        message = "没有单晶数据";
+                        status = 2;
+                        eapreply.Add("port", port);
+                        eapreply.Add("code", code);
+                        eapreply.Add("message", message);
+                        eapreply.Add("status", status);
+                        tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
+                        return;
+                    }
+                    int first_length = int.Parse(xdTable.Length);
+                    string[] mms = xdTable.Mmonocrystal.Substring(0, xdTable.Mmonocrystal.Length - 1).Split(';');
+
+                    ArrayList lenRes = new ArrayList();
+                    for (int i = 1; i < mms.Length; i++)
+                    {
+                        int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
+                        lenRes.Add(l_length);
+                    }
+                    lenRes.Sort();
+                    int max_length = int.Parse(lenRes[lenRes.Count - 1].ToString());
+                    if (first_length < max_length)
+                    {
+                        //当扫码上侧小与剩余最大的长度，status=2代表不翻转
+                        status = 2;
+                    }
+                }
+            eapreply.Add("port", port);
+                eapreply.Add("code", code);
+                eapreply.Add("message", message);
+                eapreply.Add("status", status);
+                tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
+            }
+            catch (Exception ex)
+            {
+                log.LogErrorWrite("TCP_Driver", GetType().Name, MethodBase.GetCurrentMethod().Name + "()", ex.ToString());
+            }
+        }
+
+        public void BCRReadRequestReply3(string eqpName, string timeKey, string readID)
+        {
+            try
+            {
+                //var machine = ObjectManager.MachineManager.ViewMachine(eqpName);
+                // if (machine == null)
+                // {
                 //    log.LogErrorWrite("TCP_Driver", GetType().Name, MethodBase.GetCurrentMethod().Name, string.Format("Find Machine Error[{0}]:MachineID={1}", timeKey, machine.MachineId));
                 //     return;
                 // }
@@ -98,11 +327,41 @@ namespace Getech.EAP.HttpMessageService
                 //....
                 string code = "ok";
                 string message = "success";
-                int status = 1;
-                if (readID == "NoRead")
+                int status = 2;
+                ObjectManager om = new ObjectManager();
+                Type t = om.GetType();
+                var propterties = t.GetProperties(BindingFlags.Static | BindingFlags.Public);
+                foreach (PropertyInfo pi in propterties)
+                {
+                    var o = Activator.CreateInstance(pi.PropertyType);
+                    pi.SetValue(om, o);
+                }
+
+
+                //readID = "CDGC2232204Z4801T61Y04W";
+                if (readID == ConstUtil.READID_NO_READ)
                 {
                     code = "NG";
                     message = "单晶id未读取";
+                }
+
+
+                XdTable xdTable = ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(readID);
+                int first_length = int.Parse(xdTable.Length);
+                string[] mms = xdTable.Mmonocrystal.Substring(0, xdTable.Mmonocrystal.Length - 1).Split(';');
+
+                ArrayList lenRes = new ArrayList();
+                for (int i = 1; i < mms.Length; i++)
+                {
+                    int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
+                    lenRes.Add(l_length);
+                }
+                lenRes.Sort();
+                int max_length = int.Parse(lenRes[lenRes.Count - 1].ToString());
+                if (first_length < max_length)
+                {
+                    //当扫码上侧小与剩余最大的长度，status=2代表不翻转
+                    status = 1;
                 }
 
                 var eapreply = new JObject();
@@ -118,11 +377,19 @@ namespace Getech.EAP.HttpMessageService
             }
         }
 
-        
+        public void handlerTCP_BCRReadRequest(string name1,string name2,string timeKey,string portId)
+        {
+            tcpCommandService.TCP_BCRReadRequest(name1, timeKey, "SA");
+            tcpCommandService.TCP_BCRReadRequest(name2, timeKey, "SA");
+            Dictionary<string, object> innerMap = new Dictionary<string, object>();
+            innerMap.Add("port", portId);
+            innerMap.Add("timeKey", timeKey);
+            putColIdDic(name1, innerMap);
+            putColIdDic(name2, innerMap);
+        }
 
 
-
-        public void AGVTransferStateCommand( string timeKey, Dictionary<string, string> innerMap, List<Entity.EAPEntities.DataTransferObject.MES_Reply.TRANSPORTJOB> jobList)
+        public void AGVTransferStateCommand(string timeKey, Dictionary<string, string> innerMap, List<Entity.EAPEntities.DataTransferObject.MES_Reply.TRANSPORTJOB> jobList)
         {
             try
             {
@@ -163,12 +430,13 @@ namespace Getech.EAP.HttpMessageService
                     //var taskState = jobject.GetVal("taskState ");
                     if (messageName == "AGVTransferStateCommand")
                     {
-                        
-                        foreach (var tasklist in taskIdList) {
+
+                        foreach (var tasklist in taskIdList)
+                        {
                             var remp = (JObject)tasklist;
                             TRANSPORTJOB tRANSPORTJOB = new TRANSPORTJOB();
                             tRANSPORTJOB.TRANSPORTJOBNAME = remp.GetVal("TRANSPORTJOBNAME");
-                            tRANSPORTJOB.TRANSPORTJOBSTATE= remp.GetVal("TRANSPORTJOBSTATE");
+                            tRANSPORTJOB.TRANSPORTJOBSTATE = remp.GetVal("TRANSPORTJOBSTATE");
                             joblist.Add(tRANSPORTJOB);
                         }
                         var mesGetAGVTransportJobStateReply = new MESGetAGVTransportJobStateReply();

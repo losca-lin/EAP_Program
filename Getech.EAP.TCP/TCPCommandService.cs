@@ -20,7 +20,7 @@ namespace Getech.EAP.TCP
     public class TCPCommandService : AbstractEventHandler, ITCPCommandService
     {
         private static readonly ILogManager log = NLogManager.Logger;
-
+        
         private ITCPContext context;
         public TCPCommandService()
         {

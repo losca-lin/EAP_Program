@@ -18,6 +18,7 @@ namespace Getech.EAP.HttpMessageServiceContract
         void JXSBCRRequest(string eqpName, string timekey, Request message);
 
         void BCRReadRequestReply(string eqpName, string timekey, string readID);
+        void BCRReadRequestReply1(string eqpName, string timekey, string readID);
 
         //EAP下达获取AGV搬送状态命令
         void AGVTransferStateCommand(string timekey, Dictionary<string, string> innerMap,List<TRANSPORTJOB> jobList);

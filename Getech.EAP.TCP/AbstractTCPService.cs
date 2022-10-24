@@ -12,6 +12,7 @@ namespace Getech.EAP.TCP
 {
     public abstract class AbstractTCPService : ITCPEventHandler
     {
+        public static Dictionary<string, string> gloalKey = new Dictionary<string, string>();
         protected static readonly ILogManager log = NLogManager.Logger;
         protected static readonly ITCPCommandService tcpCmdService = CommonContexts.ResolveInstance<ITCPCommandService>();
         protected static readonly IMessageServiceContract messageService = CommonContexts.ResolveInstance<IMessageServiceContract>();
