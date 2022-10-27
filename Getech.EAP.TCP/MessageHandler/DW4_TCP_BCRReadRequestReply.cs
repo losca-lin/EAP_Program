@@ -25,7 +25,7 @@ namespace Getech.EAP.TCP.MessageHandler
                 //var dcr= ObjectManager.DCRManager.FindDCRByDCR(contextname);
                 //var machine = ObjectManager.MachineManager.ViewMachine(dcr.LineId, dcr.MachineId);
                 messageService.BCRReadRequestReply1(contextname,"",ReadID);
-               // opcMessageService.BCRReadRequestReply(contextname, ReadID);
+               // opcMessageService.BCRReadRequestReply(contextname, ReadID);s
 
             }
             catch (Exception ex)

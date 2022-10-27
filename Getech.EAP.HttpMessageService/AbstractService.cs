@@ -36,6 +36,8 @@ namespace Getech.EAP.HttpMessageService
             return innerMap;
         }
 
+    
+
         public Dictionary<string, object> getColIdDic(string key)
         {
             Dictionary<string, object> innerMap = null;
