@@ -219,19 +219,10 @@ namespace Getech.EAP.HttpMessageService
         public void BCRReadRequestReply1(string eqpName, string timeKey, string readID) {
             try
             {
-                //var machine = ObjectManager.MachineManager.ViewMachine(eqpName);
-                // if (machine == null)
-                // {
-                //    log.LogErrorWrite("TCP_Driver", GetType().Name, MethodBase.GetCurrentMethod().Name, string.Format("Find Machine Error[{0}]:MachineID={1}", timeKey, machine.MachineId));
-                //     return;
-                // }
-                string port = "";
-                // timeKey = innerMap["timeKey"].ToString();
-                var eapreply = new JObject();
 
                 #region 获取双扫码枪值
                 Dictionary<string, object> innerMap = null;
-              
+
                 string key = "";
                 string key_1 = "";
                 if (eqpName.Contains("_"))
@@ -239,16 +230,21 @@ namespace Getech.EAP.HttpMessageService
                     key_1 = eqpName;
                     key = key_1.Split('_')[0];
                     innerMap = getColIdDic(key);
-                    
-                    
+
+                    if(innerMap == null)
+                    {
+                        return;
+                    }
                     int count = (int)innerMap["count"];
-                    
-                    if(count < 1) { 
+
+                    if (count < 1)
+                    {
                         if (string.IsNullOrEmpty(readID) || readID == ConstUtil.READID_NO_READ)
                         {
-                            innerMap.Remove("count");
-                            count++;
-                            innerMap.Add("count", count);
+                            //innerMap.Remove("count");
+                            //count++;
+                            //innerMap.Add("count", count);
+                            innerMap["count"] = ++count;
                             return;
                         }
                         innerMap["value"] = readID;
@@ -259,93 +255,174 @@ namespace Getech.EAP.HttpMessageService
                 {
                     key = eqpName;
                     innerMap = getColIdDic(key);
+                    if (innerMap == null)
+                    {
+                        return;
+                    }
                     int count = (int)innerMap["count"];
                     if (count < 1)
                     {
                         if (string.IsNullOrEmpty(readID) || readID == ConstUtil.READID_NO_READ)
                         {
-                            innerMap.Remove("count");
-                            count++;
-                            innerMap.Add("count", count);
+
+                            innerMap["count"] = ++count;
                             return;
                         }
 
                         innerMap["value"] = readID;
                     }
-                   
+
                 }
                 getColIdDicDel(key);
 
                 #endregion
-
-                port = innerMap["port"].ToString();
+                string port = innerMap["port"].ToString();
                 timeKey = innerMap["timeKey"].ToString();
-
-
-                string code = "ok";
-                string message = "success";
-                int status = 1;
-                ObjectManager om = new ObjectManager();
-                Type t = om.GetType();
-                var propterties = t.GetProperties(BindingFlags.Static | BindingFlags.Public);
-                foreach (PropertyInfo pi in propterties)
+                //处理是否需要翻转
+                if (eqpName.Contains("_"))
                 {
-                    var o = Activator.CreateInstance(pi.PropertyType);
-                    pi.SetValue(om, o);
-                }
-
-
-                //readID = "CDGC2232204Z4801T61Y04W";
-                if (readID == ConstUtil.READID_NO_READ)
-                {
-                    code = "NG";
-                    message = "单晶id未读取";
+                    handlerRevLocalProduct(port, timeKey, readID);
                 }
                 else
                 {
-
-                    V_LocalProductCry vLocalProduct = ObjectManager.V_LocalProductCryManager.ViewVLocalProductCryListByCode(readID);
-                    if (vLocalProduct == null)
-                    {
-                        code = "NG";
-                        message = "没有单晶数据";
-                        status = 2;
-                        eapreply.Add("port", port);
-                        eapreply.Add("code", code);
-                        eapreply.Add("message", message);
-                        eapreply.Add("status", status);
-                        tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
-                        return;
-                    }
-                    double first_length = double.Parse(vLocalProduct.D_Long);
-                    string[] mms = vLocalProduct.WorkShop.Substring(0, vLocalProduct.WorkShop.Length - 1).Split(';');
-                    if (mms.Length != 1)
-                    {
-                        ArrayList lenRes = new ArrayList();
-                        for (int i = 1; i < mms.Length; i++)
-                        {
-                            int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
-                            lenRes.Add(l_length);
-                        }
-                        lenRes.Sort();
-                        double max_length = double.Parse(lenRes[lenRes.Count - 1].ToString());
-                        if (first_length < max_length)
-                        {
-                            //当扫码上侧小与剩余最大的长度，status=2代表不翻转
-                            status = 2;
-                        }
-                    }
+                    handlerLocalProduct(port, timeKey, readID);
                 }
-                eapreply.Add("port", port);
-                eapreply.Add("code", code);
-                eapreply.Add("message", message);
-                eapreply.Add("status", status);
-                tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
             }
             catch (Exception ex)
             {
                 log.LogErrorWrite("TCP_Driver", GetType().Name, MethodBase.GetCurrentMethod().Name + "()", ex.ToString());
             }
+
+        }
+
+        private void handlerLocalProduct(string port,string timeKey,string readID)
+        {
+            var eapreply = new JObject();
+            string code = "ok";
+            string message = "success";
+            int status = 1;
+            ObjectManager om = new ObjectManager();
+            Type t = om.GetType();
+            var propterties = t.GetProperties(BindingFlags.Static | BindingFlags.Public);
+            foreach (PropertyInfo pi in propterties)
+            {
+                var o = Activator.CreateInstance(pi.PropertyType);
+                pi.SetValue(om, o);
+            }
+
+
+            //readID = "CDGC2232204Z4801T61Y04W";
+            if (readID == ConstUtil.READID_NO_READ)
+            {
+                code = "NG";
+                message = "单晶id未读取";
+            }
+            else
+            {
+
+                V_LocalProductCry vLocalProduct = ObjectManager.V_LocalProductCryManager.ViewVLocalProductCryListByCode(readID);
+                if (vLocalProduct == null)
+                {
+                    code = "NG";
+                    message = "没有单晶数据";
+                    status = 2;
+                    eapreply.Add("port", port);
+                    eapreply.Add("code", code);
+                    eapreply.Add("message", message);
+                    eapreply.Add("status", status);
+                    tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
+                    return;
+                }
+                double first_length = double.Parse(vLocalProduct.D_Long);
+                string[] mms = vLocalProduct.WorkShop.Substring(0, vLocalProduct.WorkShop.Length - 1).Split(';');
+                if (mms.Length != 1)
+                {
+                    ArrayList lenRes = new ArrayList();
+                    for (int i = 1; i < mms.Length; i++)
+                    {
+                        int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
+                        lenRes.Add(l_length);
+                    }
+                    lenRes.Sort();
+                    double max_length = double.Parse(lenRes[lenRes.Count - 1].ToString());
+                    if (first_length < max_length)
+                    {
+                        //当扫码上侧小与剩余最大的长度，status=2代表不翻转
+                        status = 2;
+                    }
+                }
+            }
+            eapreply.Add("port", port);
+            eapreply.Add("code", code);
+            eapreply.Add("message", message);
+            eapreply.Add("status", status);
+            tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
+
+        }
+
+        //反方向
+        private void handlerRevLocalProduct(string port, string timeKey, string readID)
+        {
+            var eapreply = new JObject();
+            string code = "ok";
+            string message = "success";
+            int status = 2;
+            ObjectManager om = new ObjectManager();
+            Type t = om.GetType();
+            var propterties = t.GetProperties(BindingFlags.Static | BindingFlags.Public);
+            foreach (PropertyInfo pi in propterties)
+            {
+                var o = Activator.CreateInstance(pi.PropertyType);
+                pi.SetValue(om, o);
+            }
+
+
+            //readID = "CDGC2232204Z4801T61Y04W";
+            if (readID == ConstUtil.READID_NO_READ)
+            {
+                code = "NG";
+                message = "单晶id未读取";
+            }
+            else
+            {
+
+                V_LocalProductCry vLocalProduct = ObjectManager.V_LocalProductCryManager.ViewVLocalProductCryListByCode(readID);
+                if (vLocalProduct == null)
+                {
+                    code = "NG";
+                    message = "没有单晶数据";
+                    status = 1;
+                    eapreply.Add("port", port);
+                    eapreply.Add("code", code);
+                    eapreply.Add("message", message);
+                    eapreply.Add("status", status);
+                    tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
+                    return;
+                }
+                double first_length = double.Parse(vLocalProduct.D_Long);
+                string[] mms = vLocalProduct.WorkShop.Substring(0, vLocalProduct.WorkShop.Length - 1).Split(';');
+                if (mms.Length != 1)
+                {
+                    ArrayList lenRes = new ArrayList();
+                    for (int i = 1; i < mms.Length; i++)
+                    {
+                        int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
+                        lenRes.Add(l_length);
+                    }
+                    lenRes.Sort();
+                    double max_length = double.Parse(lenRes[lenRes.Count - 1].ToString());
+                    if (first_length < max_length)
+                    {
+                        //当扫码上侧小与剩余最大的长度，status=2代表不翻转
+                        status = 1;
+                    }
+                }
+            }
+            eapreply.Add("port", port);
+            eapreply.Add("code", code);
+            eapreply.Add("message", message);
+            eapreply.Add("status", status);
+            tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
 
         }
         public void BCRReadRequestReply1_old2(string eqpName, string timeKey, string readID)
