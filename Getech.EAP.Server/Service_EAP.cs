@@ -52,15 +52,16 @@ namespace Getech.EAP.Service
                 applicationStartup.Initialization();
                 appContext = CommonContexts.ApplicationContext;
                 Console.WriteLine("Auto.Framework Success!");
-                Console.WriteLine(DateTime.Now);
+                Console.WriteLine(DateTime.Now);            
                 //初始化数据
-               // ObjectInitialize();
-              //  Console.WriteLine("DB Intialize Success!");
+                // ObjectInitialize();
+                //  Console.WriteLine("DB Intialize Success!");
 
                 //rule config file initialization
-               // ruleXmlInit();
+                // ruleXmlInit();
                 InitConnections(out OpenSuccessed);
 
+                
                 if (OpenSuccessed)
                 {
                     Console.WriteLine("EAP Server Started!");

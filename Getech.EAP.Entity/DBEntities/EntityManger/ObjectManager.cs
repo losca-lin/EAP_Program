@@ -26,5 +26,7 @@ namespace Getech.EAP.Entity.DBEntities.EntityManger
         public static PortManager PortManager { get; set; }
 
         public static UserGroupManager UserGroupManager { get; set; }
+
+        public static V_LocalProductCryManager V_LocalProductCryManager { get; set; }
     }
 }

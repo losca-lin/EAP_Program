@@ -304,9 +304,8 @@ namespace Getech.EAP.HttpMessageService
                 else
                 {
 
-                    XdTable xdTable = ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(readID);
-                    //todo xdtable判空
-                    if (xdTable == null)
+                    V_LocalProductCry vLocalProduct = ObjectManager.V_LocalProductCryManager.ViewVLocalProductCryListByCode(readID);
+                    if (vLocalProduct == null)
                     {
                         code = "NG";
                         message = "没有单晶数据";
@@ -318,21 +317,23 @@ namespace Getech.EAP.HttpMessageService
                         tcpCommandService.TCP_HttpReportReply("KQX-JXS-01", timeKey, eapreply);
                         return;
                     }
-                    int first_length = int.Parse(xdTable.Length);
-                    string[] mms = xdTable.Mmonocrystal.Substring(0, xdTable.Mmonocrystal.Length - 1).Split(';');
-
-                    ArrayList lenRes = new ArrayList();
-                    for (int i = 1; i < mms.Length; i++)
+                    double first_length = double.Parse(vLocalProduct.D_Long);
+                    string[] mms = vLocalProduct.WorkShop.Substring(0, vLocalProduct.WorkShop.Length - 1).Split(';');
+                    if (mms.Length != 1)
                     {
-                        int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
-                        lenRes.Add(l_length);
-                    }
-                    lenRes.Sort();
-                    int max_length = int.Parse(lenRes[lenRes.Count - 1].ToString());
-                    if (first_length < max_length)
-                    {
-                        //当扫码上侧小与剩余最大的长度，status=2代表不翻转
-                        status = 2;
+                        ArrayList lenRes = new ArrayList();
+                        for (int i = 1; i < mms.Length; i++)
+                        {
+                            int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
+                            lenRes.Add(l_length);
+                        }
+                        lenRes.Sort();
+                        double max_length = double.Parse(lenRes[lenRes.Count - 1].ToString());
+                        if (first_length < max_length)
+                        {
+                            //当扫码上侧小与剩余最大的长度，status=2代表不翻转
+                            status = 2;
+                        }
                     }
                 }
                 eapreply.Add("port", port);

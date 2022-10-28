@@ -20,7 +20,7 @@ namespace Getech.EAP.Entity.DBEntities.EntityManger
             var db = new SqlSugarScope(new ConnectionConfig()
             { 
                 ConnectionString = ConfigurationManager.AppSettings["DbConstr"],
-                DbType = DbType.MySql,
+                DbType = DbType.SqlServer,
                 InitKeyType = InitKeyType.Attribute,
                 IsAutoCloseConnection = true
             });
