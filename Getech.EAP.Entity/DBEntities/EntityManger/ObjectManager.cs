@@ -28,5 +28,6 @@ namespace Getech.EAP.Entity.DBEntities.EntityManger
         public static UserGroupManager UserGroupManager { get; set; }
 
         public static V_LocalProductCryManager V_LocalProductCryManager { get; set; }
+        public static V_CrystalstickDetailManager V_CrystalstickDetailManager { get; set; }
     }
 }

@@ -21,6 +21,7 @@ namespace Getech.EAP.HttpMessageService
 {
     public class MessageService : AbstractService, IMessageServiceContract
     {
+       
         public void FLS_AGVActionReport(string eqpName, string timeKey, Request message)
         {
             try
@@ -66,8 +67,8 @@ namespace Getech.EAP.HttpMessageService
             try
             {
                 string portId = message.Body.GetVal("port").ToString().Trim();
-                
-                string name = "DCR0"+ portId;
+
+                string name = "DCR0" + portId;
                 string name_1 = "DCR0" + portId + "_1";
                 #region mark
                 //switch (portId)
@@ -216,7 +217,8 @@ namespace Getech.EAP.HttpMessageService
 
         }
 
-        public void BCRReadRequestReply1(string eqpName, string timeKey, string readID) {
+        public void BCRReadRequestReply1(string eqpName, string timeKey, string readID)
+        {
             try
             {
 
@@ -231,7 +233,7 @@ namespace Getech.EAP.HttpMessageService
                     key = key_1.Split('_')[0];
                     innerMap = getColIdDic(key);
 
-                    if(innerMap == null)
+                    if (innerMap == null)
                     {
                         return;
                     }
@@ -278,14 +280,15 @@ namespace Getech.EAP.HttpMessageService
                 #endregion
                 string port = innerMap["port"].ToString();
                 timeKey = innerMap["timeKey"].ToString();
+                log.LogInfoWrite("TCP_Driver", GetType().Name, System.Reflection.MethodBase.GetCurrentMethod().Name + "()", eqpName + "单晶id为：" + readID);
                 //处理是否需要翻转
                 if (eqpName.Contains("_"))
                 {
-                    handlerRevLocalProduct(port, timeKey, readID);
+                    handlerLocalProduct(port, timeKey, readID);
                 }
                 else
                 {
-                    handlerLocalProduct(port, timeKey, readID);
+                    handlerRevLocalProduct(port, timeKey, readID);
                 }
             }
             catch (Exception ex)
@@ -295,12 +298,12 @@ namespace Getech.EAP.HttpMessageService
 
         }
 
-        private void handlerLocalProduct(string port,string timeKey,string readID)
+        private void handlerLocalProduct(string port, string timeKey, string readID)
         {
             var eapreply = new JObject();
-            string code = "ok";
+            string code = "OK";
             string message = "success";
-            int status = 1;
+            int status = 2;
             ObjectManager om = new ObjectManager();
             Type t = om.GetType();
             var propterties = t.GetProperties(BindingFlags.Static | BindingFlags.Public);
@@ -315,12 +318,13 @@ namespace Getech.EAP.HttpMessageService
             if (readID == ConstUtil.READID_NO_READ)
             {
                 code = "NG";
+                status = 2;
                 message = "单晶id未读取";
             }
             else
             {
 
-                V_LocalProductCry vLocalProduct = ObjectManager.V_LocalProductCryManager.ViewVLocalProductCryListByCode(readID);
+                V_CrystalstickDetail vLocalProduct = ObjectManager.V_CrystalstickDetailManager.ViewV_CrystalstickDetailListByCode(readID);
                 if (vLocalProduct == null)
                 {
                     code = "NG";
@@ -338,17 +342,30 @@ namespace Getech.EAP.HttpMessageService
                 if (mms.Length != 1)
                 {
                     ArrayList lenRes = new ArrayList();
-                    for (int i = 1; i < mms.Length; i++)
+                    for (int i = 0; i < mms.Length; i++)
                     {
-                        int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
-                        lenRes.Add(l_length);
+                        double l_length = double.Parse(ObjectManager.V_CrystalstickDetailManager.ViewV_CrystalstickDetailListByCode(mms[i]).D_Long);
+                        if (l_length != first_length)
+                        {
+                            lenRes.Add(l_length);
+
+                        }
                     }
+
                     lenRes.Sort();
-                    double max_length = double.Parse(lenRes[lenRes.Count - 1].ToString());
-                    if (first_length < max_length)
+                    if (lenRes == null || lenRes.Count == 0)
                     {
-                        //当扫码上侧小与剩余最大的长度，status=2代表不翻转
                         status = 2;
+                    }
+                    else
+                    {
+                        double max_length = double.Parse(lenRes[lenRes.Count - 1].ToString());
+
+                        if (first_length < max_length)
+                        {
+                            //当扫码上侧小与剩余最大的长度，status=2代表不翻转
+                            status = 1;
+                        }
                     }
                 }
             }
@@ -364,9 +381,9 @@ namespace Getech.EAP.HttpMessageService
         private void handlerRevLocalProduct(string port, string timeKey, string readID)
         {
             var eapreply = new JObject();
-            string code = "ok";
+            string code = "OK";
             string message = "success";
-            int status = 2;
+            int status = 1;
             ObjectManager om = new ObjectManager();
             Type t = om.GetType();
             var propterties = t.GetProperties(BindingFlags.Static | BindingFlags.Public);
@@ -381,17 +398,18 @@ namespace Getech.EAP.HttpMessageService
             if (readID == ConstUtil.READID_NO_READ)
             {
                 code = "NG";
+                status = 2;
                 message = "单晶id未读取";
             }
             else
             {
 
-                V_LocalProductCry vLocalProduct = ObjectManager.V_LocalProductCryManager.ViewVLocalProductCryListByCode(readID);
+                V_CrystalstickDetail vLocalProduct = ObjectManager.V_CrystalstickDetailManager.ViewV_CrystalstickDetailListByCode(readID);
                 if (vLocalProduct == null)
                 {
                     code = "NG";
                     message = "没有单晶数据";
-                    status = 1;
+                    status = 2;
                     eapreply.Add("port", port);
                     eapreply.Add("code", code);
                     eapreply.Add("message", message);
@@ -401,21 +419,40 @@ namespace Getech.EAP.HttpMessageService
                 }
                 double first_length = double.Parse(vLocalProduct.D_Long);
                 string[] mms = vLocalProduct.WorkShop.Substring(0, vLocalProduct.WorkShop.Length - 1).Split(';');
-                if (mms.Length != 1)
+                if (mms.Length == 1)
+                {
+                    status = 2;
+
+                }
+                else
                 {
                     ArrayList lenRes = new ArrayList();
-                    for (int i = 1; i < mms.Length; i++)
+                    for (int i = 0; i < mms.Length; i++)
                     {
-                        int l_length = int.Parse(ObjectManager.XdTableManager.ViewXdTableListBymonocrystal(mms[i]).Length);
-                        lenRes.Add(l_length);
+                        double l_length = double.Parse(ObjectManager.V_CrystalstickDetailManager.ViewV_CrystalstickDetailListByCode(mms[i]).D_Long);
+                        if (l_length != first_length)
+                        {
+                            lenRes.Add(l_length);
+
+                        }
                     }
+
                     lenRes.Sort();
-                    double max_length = double.Parse(lenRes[lenRes.Count - 1].ToString());
-                    if (first_length < max_length)
+                    if (lenRes == null || lenRes.Count == 0)
                     {
-                        //当扫码上侧小与剩余最大的长度，status=2代表不翻转
-                        status = 1;
+                        status = 2;
                     }
+                    else
+                    {
+
+                        double max_length = double.Parse(lenRes[lenRes.Count - 1].ToString());
+                        if (first_length < max_length)
+                        {
+                            //当扫码上侧小与剩余最大的长度，status=2代表不翻转
+                            status = 2;
+                        }
+                    }
+
                 }
             }
             eapreply.Add("port", port);
@@ -444,7 +481,7 @@ namespace Getech.EAP.HttpMessageService
                 Dictionary<string, object> innerMap_1 = null;
                 string key = "";
                 string key_1 = "";
-                if (eqpName.Contains("_")) 
+                if (eqpName.Contains("_"))
                 {
                     key_1 = eqpName;
                     innerMap_1 = getColIdDic(key_1);
@@ -452,11 +489,11 @@ namespace Getech.EAP.HttpMessageService
 
                     key = key_1.Split('_')[0];
                     innerMap = getColIdDic(key);
-                    if (innerMap["value"].ToString() == "") 
+                    if (innerMap["value"].ToString() == "")
                     {
                         return;
                     }
-                } 
+                }
                 else
                 {
                     key = eqpName;
@@ -559,12 +596,12 @@ namespace Getech.EAP.HttpMessageService
                 string port = "";
                 // timeKey = innerMap["timeKey"].ToString();
                 var eapreply = new JObject();
-          
+
                 innerMap = getColIdDic(eqpName);
                 port = innerMap["port"].ToString();
                 timeKey = innerMap["timeKey"].ToString();
 
-       
+
 
                 // 取数据库数据，readid为单晶ID，处理数据逻辑后返回到中为机械手
                 //....
@@ -715,8 +752,8 @@ namespace Getech.EAP.HttpMessageService
             }
         }
 
-        public void handlerTCP_BCRReadRequest(string name,string name_1,string timeKey,string portId)
-        { 
+        public void handlerTCP_BCRReadRequest(string name, string name_1, string timeKey, string portId)
+        {
             Dictionary<string, object> innerMap = new Dictionary<string, object>();
             innerMap.Add("name", name);
             innerMap.Add("port", portId);
